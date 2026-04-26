@@ -8,7 +8,9 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100mb' }));
+app.use(express.static(path.join(__dirname)));
+
 
 // In-memory data
 let movies = [];
@@ -19,7 +21,7 @@ let users = [];
 // ====================== ROUTES ======================
 
 app.get('/', (req, res) => {
-  res.send('🎬 Movie API is running! Try /movies');
+  res.send(' Movie API is running! Try /movies');
 });
 
 // Get all movies
@@ -51,7 +53,43 @@ app.post('/movies', (req, res) => {
   };
 
   movies.push(movie);
-  res.status(201).json(movie);
+  res.status(201).json(movie);  
+});
+
+app.put('/movies/:id', (req, res) => {
+  const movie = movies.find(m => m.id == req.params.id);
+
+  if (!movie) {
+    return res.status(404).json({ message: "Movie not found" });
+  }
+
+  const { title, description, whereToWatch, image } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ message: "Title is required" });
+  }
+
+  movie.title = title;
+  movie.description = description || movie.description;
+  movie.whereToWatch = whereToWatch || movie.whereToWatch;
+  movie.image = image || movie.image;
+
+  res.json({
+    message: "Movie updated successfully",
+    movie
+  });
+});
+// ====================== DELETE MOVIE ======================
+app.delete('/movies/:id', (req, res) => {
+  const index = movies.findIndex(m => m.id == req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ message: "Movie not found" });
+  }
+
+  movies.splice(index, 1);
+
+  res.json({ message: "Movie deleted successfully" });
 });
 
 // Reviews
@@ -94,6 +132,6 @@ app.use((req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`✅ Movie API Server is running on http://localhost:${PORT}`);
-  console.log(`📍 Open this link to test: http://localhost:${PORT}/movies`);
+  console.log(` Movie API Server is running on http://localhost:${PORT}`);
+  console.log(` Open this link to test: http://localhost:${PORT}/movies`);
 });
